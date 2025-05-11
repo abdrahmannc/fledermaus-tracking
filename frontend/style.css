@@ -1,0 +1,45 @@
+:root {
+    --primary: #4a6fa5;
+    --primary-light: #6b8cbe;
+    --secondary: #166088;
+    --secondary-light: #3a7ea1;
+    --dark: #0a2342;
+    --dark-light: #1a3258;
+    --light: #f8f9fa;
+    --light-gray: #e9ecef;
+    --gray: #6c757d;
+    --success: #28a745;
+    --success-light: #4bbf6b;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #17a2b8;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+body {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+
+/* Container Layout */
+.container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
