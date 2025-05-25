@@ -16,9 +16,12 @@ Das Hauptziel ist die Unterstützung bei der Identifikation von **potenziellen Q
 
 ## Technologien
 
-- **Frontend**: HTML, CSS, JavaScript
-- **Backend**: Python, FastAPI
-- **Bildverarbeitung**: OpenCV
+- **Frontend**: React (ursprünglich HTML, CSS, JavaScript)
+- **Backend**: Python (FastAPI)
+- **Videoanalyse**: OpenCV
+
+### ⚠️ Hinweis
+Dieses Projekt wurde ursprünglich mit einfachem HTML, CSS und JavaScript gestartet. Aufgrund zunehmender Komplexität wurde der Code auf **React** migriert, um Struktur, Wiederverwendbarkeit und Wartbarkeit zu verbessern. Frühere Versionen findest du im Git-Verlauf.
 
 ## Installation
 
