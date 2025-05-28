@@ -3,7 +3,7 @@ import useVideoAnalysis from '../hooks/useVideoAnalysis';
 import LoadingOverlay from './LoadingOverlay';
 import Alert from './Alert';
 
-const UploadSection = ({ active, setResults, switchToResults }) => {
+const UploadSection = ({ active,defaultSensitivity, setResults, switchToResults }) => {
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [startTime, setStartTime] = useState(0);
@@ -11,6 +11,7 @@ const UploadSection = ({ active, setResults, switchToResults }) => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [alert, setAlert] = useState(null);
+  const [uploadSensitivity, setUploadSensitivity] = useState(defaultSensitivity);
 
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -22,6 +23,13 @@ const UploadSection = ({ active, setResults, switchToResults }) => {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
+
+  useEffect(() => {
+    if (videoFile) {
+      setUploadSensitivity(defaultSensitivity);
+    }
+  }, [videoFile, defaultSensitivity]);
+
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -67,7 +75,7 @@ const UploadSection = ({ active, setResults, switchToResults }) => {
     }
 
     try {
-      const analyzeResults = await analyzeVideo(videoFile, startTime, endTime);
+      const analyzeResults = await analyzeVideo(videoFile, startTime, endTime,uploadSensitivity);
       if (analyzeResults) {
         setResults(analyzeResults);      
         switchToResults();              
@@ -145,7 +153,23 @@ const UploadSection = ({ active, setResults, switchToResults }) => {
                 {(endTime - startTime).toFixed(2)}s)
               </p>
               <p><strong>Aktuelle Zeit:</strong> {currentTime.toFixed(2)}s</p>
+
+               <div className="sensitivity-control" style={{ marginTop: '1em' }}>
+            <label>Empfindlichkeit: </label>
+             <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={uploadSensitivity}
+            onChange={(e) => setUploadSensitivity(parseFloat(e.target.value))}
+              />
+          <span> {uploadSensitivity.toFixed(2)}</span>
+           
+          </div>
             </div>
+
+         
           )}
 
           <button
