@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import HomeSection from './HomeSection';
 import UploadSection from './UploadSection';
 import ResultsSection from './ResultsSection';
 import Settings from './Settings';
 
 const MainContent = ({ activeSection, setActiveSection, results, setResults }) => {
+    const [defaultSensitivity, setDefaultSensitivity] = useState(0.5);
   return (
     <main className="main-content">
       <header className="main-header">
@@ -16,6 +17,7 @@ const MainContent = ({ activeSection, setActiveSection, results, setResults }) =
       <UploadSection
         active={activeSection === 'upload'}
         setResults={setResults}
+        defaultSensitivity={defaultSensitivity}
         switchToResults={() => setActiveSection('results')}
       />
       {results && (
@@ -24,7 +26,12 @@ const MainContent = ({ activeSection, setActiveSection, results, setResults }) =
           results={results}
         />
       )}
-      <Settings active={activeSection === 'settings'} />
+    
+      <Settings
+        active={activeSection === 'settings'}
+        sensitivity={defaultSensitivity}
+        setSensitivity={setDefaultSensitivity}   
+      />
     </main>
   );
 };
