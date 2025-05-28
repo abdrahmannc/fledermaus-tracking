@@ -3,10 +3,9 @@ const useVideoAnalysis = (setAlert) => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
 
-  const analyzeVideo = async (videoFile) => {
+  const analyzeVideo = async (videoFile, startTime, endTime, uploadSensitivity) => {
     try {
       setLoading(true);
-
       // Simulate delay
       await new Promise(resolve => setTimeout(resolve, 1500));
         console.log("Hello I reive you request .. I do it .. best gard from analyze()")
