@@ -1,1 +1,25 @@
 .vscode
+
+# Bytecode-Dateien
+__pycache__/
+*.py[cod]
+
+# Temporäre / Lokale Skripte 
+bat-detector.py
+main.py
+
+# IDE / Editor Settings
+.vscode/
+*.swp
+*.swo
+
+# Build-Ordner von pyinstaller
+dist/
+build/
+*.spec
+
+# Exportierte Dateien 
+*.csv
+*.mp4
+*.avi
+*.png
