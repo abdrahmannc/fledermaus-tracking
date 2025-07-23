@@ -287,3 +287,117 @@ def export_flightMap(self):
 def export_hotzone(self):
     # Placeholder for future hotzone export implementation
     print("Exportiere Hotzone...")
+
+
+
+def is_inside_zone(self, x, y, zone_coords):
+    # Check if a point (x, y) lies inside a rectangular zone
+    x1, y1, x2, y2 = zone_coords
+    return x1 <= x <= x2 and y1 <= y <= y2
+
+
+def analyze_tracks(self, tracks, zones):
+    # Analyze bat tracks to detect when they enter or exit specified zones
+    track_events = []
+    for track in tracks:
+        track_id = track["id"]
+        points = track["points"]
+        zone_status = {zone["id"]: False for zone in zones}  # Tracks if bat is inside zone
+        for frame_id, x, y in points:
+            for zone in zones:
+                inside = self.is_inside_zone(x, y, zone["coords"])
+                zone_id = zone["id"]
+                if inside and not zone_status[zone_id]:
+                    # Bat entered a zone
+                    track_events.append({
+                        "track_id": track_id,
+                        "frame": frame_id,
+                        "zone": zone_id,
+                        "event": "entered"
+                    })
+                    zone_status[zone_id] = True
+                elif not inside and zone_status[zone_id]:
+                    # Bat exited a zone
+                    track_events.append({
+                        "track_id": track_id,
+                        "frame": frame_id,
+                        "zone": zone_id,
+                        "event": "exited",
+                    })
+                    zone_status[zone_id] = False
+    return track_events
+
+
+def compute_dwell_times(events):
+    # Compute how many frames bats spent inside zones (dwell time)
+    dwell_dict = defaultdict(dict)
+    dwell_results = []
+    for e in events:
+        tid = e["track_id"]
+        z = e["zone"]
+        if e["event"] == "entered":
+            dwell_dict[tid][z] = e["frame"]
+        elif e["event"] == "exited" and z in dwell_dict[tid]:
+            duration = e["frame"] - dwell_dict[tid][z]
+            dwell_results.append({
+                "track_id": tid,
+                "zone": z,
+                "dwell_frames": duration
+            })
+            del dwell_dict[tid][z]
+    return dwell_results
+
+
+    def filter_events_by_roi(self):
+        # Filter events so only those inside the selected ROI are kept
+        if not self.roi:
+            print("[WARNING] Kein ROI gesetzt zum Filtern.")
+            return
+        x, y, w, h = self.roi
+        x2, y2 = x + w, y + h
+        filtered_events = []
+        for idx, event in enumerate(self.events):
+            center = event.get("bat_center")
+            if center:
+                cx, cy = center
+                if x <= cx <= x2 and y <= cy <= y2:
+                    filtered_events.append(event)
+                else:
+                    print(f"[INFO] Ereignis #{idx} herausgefiltert: außerhalb ROI.")
+            else:
+                print(f"[WARNING] Ereignis #{idx} hat kein bat_center, übersprungen.")
+        print(f"[INFO] {len(self.events) - len(filtered_events)} Ereignisse außerhalb ROI herausgefiltert.")
+        self.events = filtered_events
+
+
+    def run_manual_validation(self):
+        # Allow manual validation of each detected event using frame previews
+        validated_events = []
+        for idx, event in enumerate(self.events):
+            if 'frame_idx' not in event:
+                print(f"[WARNING] Ereignis #{idx} fehlt 'frame_idx': {event}")
+                continue
+            frame_idx = event['frame_idx']
+            print(f"[INFO] Validiere Ereignis bei Frame {frame_idx}")
+            is_valid = validate_event(self.video_path, frame_idx - 15, frame_idx + 15, roi=event.get("roi"))
+            if is_valid:
+                event['validated'] = True
+                event['validated_frame'] = frame_idx
+                validated_events.append(event)
+            else:
+                print(f"[INFO] Ereignis bei Frame {frame_idx} wurde abgelehnt.")
+        print(f"[INFO] Validierung abgeschlossen. {len(validated_events)} von {len(self.events)} Ereignissen übernommen.")
+        self.events = validated_events
+
+
+    def get_events(self):
+        # Return only events that have valid entry, exit, and duration times
+        return [
+            {
+                "entry": ev["entry"],
+                "exit": ev["exit"],
+                "duration": ev["duration"]
+            }
+            for ev in self.events
+            if ev.get("entry") is not None and ev.get("exit") is not None and ev.get("duration") is not None
+        ]
