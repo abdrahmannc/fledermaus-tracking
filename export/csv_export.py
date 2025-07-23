@@ -69,3 +69,16 @@ def export_events_to_csv(events, video_path, csv_path):
     print(f"Exported {len(events)} events to {csv_path}")
     
     
+def export_results(self):
+    if not self.events:
+        messagebox.showinfo("Export Results", "No events to export.")
+        return
+
+    video_name = os.path.splitext(os.path.basename(self.video_path))[0]
+    current_datetime = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')
+    current_user = getpass.getuser()
+    csv_filename = f"{video_name}_{current_datetime}_{current_user}.csv"
+    csv_path = os.path.join(os.path.dirname(self.video_path), csv_filename)
+
+    export_events_to_csv(self.events, self.video_path, csv_path)
+    messagebox.showinfo("Export Results", f"Events exported successfully to:\n{csv_path}")
