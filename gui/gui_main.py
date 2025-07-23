@@ -537,3 +537,49 @@ class BatDetectorApp:
         self.update_time_label(self.current_frame_idx / self.fps)
         delay = int(1000 / (self.fps * self.playback_speed))
         self.root.after(delay, self._stream_video)
+        
+    #
+    def update_time_label(self, current_sec):
+        total_sec = self.total_frames / self.fps if self.fps else 0
+        self.time_var.set(f"{format_time(current_sec)} / {format_time(total_sec)}")
+
+    def enable_export_buttons(self):
+        self.btn_export_csv.config(state=tk.NORMAL)
+        self.btn_export_video.config(state=tk.NORMAL)
+        self.btn_export_flightMap.config(state=tk.NORMAL)
+        self.btn_export_hotzone.config(state=tk.NORMAL)
+
+    def validate_events_gui(self):
+        if self.detector:
+            try:
+                self.detector.run_manual_validation()
+                self.status_var.set("Manuelle Validierung abgeschlossen.")
+                print("Manuelle Validierung abgeschlossen.")
+            except AttributeError:
+                messagebox.showerror("Fehler", "Manuelle Validierungsmethode im Detektor nicht implementiert.")
+
+    def update_event_tree(self, events):
+        """
+        Aktualisiert die Treeview mit Fledermaus-Ereignissen.
+        events: Eine Liste von Dicts wie {'entry': float, 'exit': float, 'duration': float}
+        """
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        for event in events:
+            entry = format_time(event['entry'])
+            exit_ = format_time(event['exit'])
+            duration = format_time(event['duration'])
+            # Change the column order to match the new German column names
+            self.tree.insert('', 'end', values=(entry, exit_, duration))
+
+    def on_detection_finished(self):
+        """
+        Wird vom VideoDetector aufgerufen, nachdem der Erkennungs-Thread abgeschlossen ist.
+        Aktualisiert die Ereignistabelle mit den finalen Erkennungsergebnissen.
+        """
+        # Hide animation when detection is finished
+        self.hide_processing_animation()
+        
+        if hasattr(self.detector, 'get_events'):
+            events = self.detector.get_events()
+            self.update_event_tree(events)
