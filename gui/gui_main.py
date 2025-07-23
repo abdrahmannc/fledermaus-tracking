@@ -449,3 +449,41 @@ class BatDetectorApp:
                 self.show_frame(frame_with_roi)
         else:
             self.status_var.set("ROI-Auswahl abgebrochen.")
+            
+    #
+    def start_detection(self):
+        if not self.video_path or not self.roi:
+            self.status_var.set("Bitte laden Sie ein Video und wählen Sie ein ROI aus.")
+            return
+        
+        # Show animation before starting detection
+        self.show_processing_animation()
+        
+        self.detector.cap = cv2.VideoCapture(self.video_path)
+        self.detector.fps = self.fps
+        self.detector.start_detection()
+        self.btn_stop.config(state=tk.NORMAL)
+        self.enable_export_buttons()
+        self.btn_validate.config(state=tk.NORMAL)
+
+    def stop_detection(self):
+        self.detector.stop_detection()
+        self.status_var.set("Erkennung gestoppt.")
+        self.btn_stop.config(state=tk.DISABLED)
+        
+        # Hide animation when detection is stopped
+        self.hide_processing_animation()
+
+    def export_results(self):
+        self.detector.export_results()
+
+    def export_marked_video(self):
+        self.detector.export_marked_video()
+
+    def export_flightMap(self):
+        self.detector.export_flightMap()
+
+    def export_hotzone(self):
+        self.detector.export_hotzone()
+        
+    
