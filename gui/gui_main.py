@@ -485,5 +485,55 @@ class BatDetectorApp:
 
     def export_hotzone(self):
         self.detector.export_hotzone()
-        
-    
+     
+    #
+    def show_frame(self, frame):
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(frame_rgb)
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        if canvas_width > 0 and canvas_height > 0:
+            img = img.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS)
+        self.tk_image = ImageTk.PhotoImage(image=img)
+        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
+
+    def play_video(self):
+        if not hasattr(self, "cap") or not self.cap.isOpened():
+            messagebox.showerror("Fehler", "Kein Video geladen oder Video kann nicht geöffnet werden.")
+            return
+        self.playing = True
+        self._stream_video()
+
+    def pause_video(self):
+        self.playing = False
+
+    def stop_video(self):
+        self.playing = False
+        if hasattr(self, "cap") and self.cap.isOpened():
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            self.current_frame_idx = 0
+            ret, frame = self.cap.read()
+            if ret:
+                frame_small = cv2.resize(frame, None, fx=self.scale_factor, fy=self.scale_factor)
+                self.show_frame(frame_small)
+                self.update_time_label(0)
+
+    def set_speed(self, event=None):
+        try:
+            self.playback_speed = float(self.speed_var.get().replace("x", ""))
+        except ValueError:
+            self.playback_speed = 1.0
+
+    def _stream_video(self):
+        if not self.playing:
+            return
+        ret, frame = self.cap.read()
+        if not ret:
+            self.playing = False
+            return
+        self.current_frame_idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+        frame_small = cv2.resize(frame, None, fx=self.scale_factor, fy=self.scale_factor)
+        self.show_frame(frame_small)
+        self.update_time_label(self.current_frame_idx / self.fps)
+        delay = int(1000 / (self.fps * self.playback_speed))
+        self.root.after(delay, self._stream_video)
