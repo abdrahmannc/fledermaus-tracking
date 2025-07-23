@@ -226,3 +226,64 @@ def _process_video(self):
         # Notify GUI if it supports completion callback
         if hasattr(self.gui, 'on_detection_finished'):
             self.gui.root.after(0, self.gui.on_detection_finished)
+
+#
+def export_marked_video(self):
+    # Ensure there are marked frames to export
+    if not hasattr(self, "marked_frames") or not self.marked_frames:
+        messagebox.showinfo("Export Video", "Keine Frames zum Exportieren vorhanden")
+        return
+
+    # Export the video using the helper function
+    export_video(self.marked_frames, self.fps, self.video_path)
+
+
+def export_results(self):
+    # Ensure there are detection events to export
+    if not self.events:
+        messagebox.showinfo("Export Ergebnisse", "Keine Ereignisse zum Exportieren.")
+        return
+
+    # Generate filename based on video name and current date
+    video_name = os.path.splitext(os.path.basename(self.video_path))[0]
+    today_str = datetime.today().strftime('%Y-%m-%d')
+    csv_filename = f"{video_name}_{today_str}.csv"
+    csv_path = os.path.join(os.path.dirname(self.video_path), csv_filename)
+
+    # Export the events to CSV file
+    export_events_to_csv(self.events, self.video_path, csv_path)
+
+    # Inform the user
+    messagebox.showinfo("Export Ergebnisse", f"Ereignisse erfolgreich exportiert nach:\n{csv_path}")
+
+
+def export_flightMap(self):
+    # Ensure there are bat tracking points and events recorded
+    if not self.bat_centers or not self.events:
+        messagebox.showinfo("Export Flugkarte", "Keine Fledermaus-Trajektorien verfügbar.")
+        return
+
+    # Create time-based flight path (dummy fps used for spacing)
+    fps = 15
+    bat_paths_with_time = {
+        1: [(i / fps, pos[0], pos[1]) for i, pos in enumerate(self.bat_centers)]
+    }
+
+    # Set output directory and filename
+    output_dir = os.path.join(os.path.dirname(self.video_path), "exports")
+    os.makedirs(output_dir, exist_ok=True)
+    filename_base = os.path.splitext(os.path.basename(self.video_path))[0]
+
+    # Export the flight map image
+    img_path = export_flightMap(bat_paths_with_time, output_dir, filename_base=filename_base, user="IfAÖ")
+
+    # Inform the user
+    if img_path:
+        messagebox.showinfo("Export Flugkarte", f"Flugkarte gespeichert:\n{img_path}")
+    else:
+        messagebox.showinfo("Export Flugkarte", "Flugkarte konnte nicht generiert werden.")
+
+
+def export_hotzone(self):
+    # Placeholder for future hotzone export implementation
+    print("Exportiere Hotzone...")
