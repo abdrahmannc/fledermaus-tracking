@@ -373,3 +373,79 @@ class BatDetectorApp:
     def update_status(self, msg):
         self.status_var.set(msg)
         self.root.update_idletasks()
+        
+    
+    def load_video(self):
+        self.video_path = filedialog.askopenfilename(
+            title="IR-Video auswählen",
+            filetypes=[("Video-Dateien", "*.mp4 *.avi *.mov"), ("Alle Dateien", "*.*")]
+        )
+        if not self.video_path:
+            return
+        self.cap = cv2.VideoCapture(self.video_path)
+        fps = self.cap.get(cv2.CAP_PROP_FPS)
+        self.fps = fps if fps and fps > 0 else 30
+        self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.current_frame_idx = 0
+
+        ret, frame = self.cap.read()
+        if ret:
+            frame_small = cv2.resize(frame, None, fx=self.scale_factor, fy=self.scale_factor)
+            green_frame = frame_small.copy()
+            green_frame[:, :, 0] = 0
+            green_frame[:, :, 2] = 0
+            self.show_frame(green_frame)
+        else:
+            messagebox.showerror("Fehler", "Video konnte nicht gelesen werden.")
+            return
+
+        info = analyze_video_quality(self.video_path)
+        if "error" in info:
+            self.status_var.set("Fehler beim Laden des Videos")
+            return
+
+        self.video_quality_info = info
+        if info["warnings"]:
+            messagebox.showwarning("Video-Qualitätswarnung", "\n".join(info["warnings"]))
+
+        high_motion_minutes = info.get("high_motion_minutes", [])
+        if high_motion_minutes:
+            motion_times = ", ".join(f"{t:.2f} min" for t in high_motion_minutes)
+            messagebox.showinfo("Kamerabewegung", f"\u26a0\ufe0f Hohe Kamerabewegung in:\n\n{motion_times}")
+
+        self.status_var.set(
+            f"Geladen: {os.path.basename(self.video_path)} | Helligkeit: {info['avg_brightness']:.1f} | "
+            f"Kontrast: {info['avg_contrast']:.1f} | Bewegung: {info['avg_motion']:.1f} | FPS: {self.fps:.1f}"
+        )
+        self.detector.video_path = self.video_path
+        self.detector.status_var = self.status_var
+        self.detector.btn_select_roi = self.btn_select_roi
+        self.detector.scale_factor = self.scale_factor
+
+        self.btn_play.config(state=tk.NORMAL)
+        self.btn_pause.config(state=tk.NORMAL)
+        self.btn_stop_video.config(state=tk.NORMAL)
+        self.btn_select_roi.config(state=tk.NORMAL)
+        self.btn_start.config(state=tk.DISABLED)
+        self.update_time_label(0)
+
+    def on_select_roi(self):
+        try:
+            roi = self.detector.select_roi()
+        except RuntimeError as e:
+            messagebox.showerror("Fehler", str(e))
+            return
+        if roi is not None:
+            self.roi = roi
+            self.status_var.set("ROI wurde ausgewählt.")
+            self.btn_start.config(state=tk.NORMAL)
+            cap = cv2.VideoCapture(self.detector.video_path)
+            ret, frame = cap.read()
+            cap.release()
+            if ret:
+                x, y, w, h = map(int, roi)
+                frame_with_roi = frame.copy()
+                cv2.rectangle(frame_with_roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                self.show_frame(frame_with_roi)
+        else:
+            self.status_var.set("ROI-Auswahl abgebrochen.")
