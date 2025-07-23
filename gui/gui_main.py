@@ -583,3 +583,11 @@ class BatDetectorApp:
         if hasattr(self.detector, 'get_events'):
             events = self.detector.get_events()
             self.update_event_tree(events)
+    #     
+    def main():
+        root = tk.Tk()
+        app = BatDetectorApp(root)
+        root.mainloop()
+
+    if __name__ == "__main__":
+        main()
