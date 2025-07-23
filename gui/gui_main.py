@@ -359,3 +359,17 @@ class BatDetectorApp:
         
         self.animation_window = None
         self.animation_canvas = None
+        
+        
+    def add_labeled_entry(self, parent, label, default, attr):
+        frame = tk.Frame(parent, bg="#282c34")
+        frame.pack(fill=tk.X, pady=1)
+        tk.Label(frame, text=label, fg="#bbb", bg="#282c34").pack(side=tk.LEFT)
+        entry = tk.Entry(frame, width=8)
+        entry.insert(0, str(default))
+        entry.pack(side=tk.RIGHT)
+        setattr(self, f"entry_{attr}", entry)
+
+    def update_status(self, msg):
+        self.status_var.set(msg)
+        self.root.update_idletasks()
