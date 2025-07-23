@@ -33,3 +33,58 @@ def export_video(frames, fps, original_video_path):
     writer.release()
 
     messagebox.showinfo("Export abgeschlossen", f"Video wurde gespeichert unter:\n{output_path}")
+
+
+
+from datetime import datetime, timezone
+import os
+import cv2
+
+def export_video(frames, fps, source_video_path, username=None):
+    """
+    Exportiert markierte Frames als Video
+    
+    Args:
+        frames: Liste der zu exportierenden Frames
+        fps: Bilder pro Sekunde
+        source_video_path: Pfad zum Quellvideo
+        username: Optionaler Benutzername für Videometadaten
+    """
+    if not frames:
+        return False
+        
+    # Wenn kein Benutzername angegeben ist, versuche System-Benutzernamen zu bekommen
+    if username is None:
+        try:
+            import getpass
+            username = getpass.getuser()
+        except:
+            username = "unbekannt"
+            
+    # Aktuelles Datum und Uhrzeit im UTC-Format
+    current_datetime = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')
+    
+    # Ausgabeordner "exports" im Verzeichnis des Quellvideos anlegen, falls nicht vorhanden
+    output_dir = os.path.join(os.path.dirname(source_video_path), "exports")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Ausgabedateiname mit Basisnamen, Zeitstempel und Benutzername
+    base_name = os.path.splitext(os.path.basename(source_video_path))[0]
+    output_path = os.path.join(output_dir, f"{base_name}_marked_{current_datetime}_{username}.avi")
+    
+    # Framegröße bestimmen
+    height, width = frames[0].shape[:2]
+    
+    # VideoWriter initialisieren (XVID-Codec)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    
+    # Alle Frames in das Video schreiben
+    for frame in frames:
+        out.write(frame)
+        
+    # Ressourcen freigeben
+    out.release()
+    
+    print(f"[INFO] Markiertes Video exportiert nach: {output_path}")
+    return output_path
