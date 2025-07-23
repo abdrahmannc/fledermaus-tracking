@@ -14,58 +14,93 @@ def is_inside_roi(bat_center, roi):
 
 
 def validate_event(video_path, start_frame, end_frame, roi=None, bat_center=None):
-    cap = cv2.VideoCapture(video_path)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    """
+    Validiert ein Ereignis durch Video-Playback mit Interaktion.
 
+    Steuerung während der Wiedergabe:
+    - Leertaste: Pause / Weiter
+    - Ziffern 1-5: Geschwindigkeit (1x bis 5x)
+    - R: Zurück zum Start-Frame
+    - Y: Ereignis bestätigen
+    - N: Ereignis ablehnen
+    - Q / ESC: Wiedergabe beenden
+
+    Args:
+        video_path (str): Pfad zum Video.
+        start_frame (int): Start-Frame der Wiedergabe.
+        end_frame (int): End-Frame der Wiedergabe.
+        roi (tuple): Rechteck (x, y, w, h) für Bereichsmarkierung (optional).
+        bat_center (tuple): Position der Fledermaus (x, y) (optional).
+
+    Returns:
+        bool: True wenn bestätigt, False wenn abgelehnt oder abgebrochen.
+    """
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    
     paused = False
-       
-    for frame_id in range(start_frame, end_frame + 1):
+    current_frame = start_frame
+    playback_speed = 1.0
+    
+    while current_frame <= end_frame and cap.isOpened():
         if not paused:
             ret, frame = cap.read()
             if not ret:
                 break
-
-            # Timestamp
-            timestamp = frame_id / fps
-            time_str = format_time(timestamp)
-            cv2.putText(frame, f"Time: {time_str}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-            # Draw ROI box
-            if roi:
-                x, y, w, h = roi
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 0), 2)
-
-            # Draw bat center circle always, red if inside ROI, gray otherwise
-            if bat_center:
-                color = (0, 0, 255) if is_inside_roi(bat_center, roi) else (200, 200, 200)
-                cv2.circle(frame, bat_center, 10, color, 2)
-
-                # Label if outside ROI
-                if not is_inside_roi(bat_center, roi):
-                    cv2.putText(frame, "Bat outside ROI", (bat_center[0] + 10, bat_center[1] - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-
-            cv2.imshow('Manual Validation (Y/N, SPACE = pause, Q = quit)', frame)
-            
-            
-        key = cv2.waitKey(30) & 0xFF
-        if key == ord('q'):
+            current_frame += 1
+        
+        # Zeit- und Frame-Anzeige
+        timestamp = current_frame / fps
+        time_str = f"{int(timestamp // 60):02}:{int(timestamp % 60):02}"
+        cv2.putText(frame, f"Zeit: {time_str} (Frame: {current_frame})", (10, 30), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        
+        # ROI zeichnen, falls definiert
+        if roi:
+            x, y, w, h = roi
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 0), 2)
+        
+        # Fledermausposition markieren (Farbe je nach Position)
+        if bat_center:
+            color = (0, 0, 255) if is_inside_roi(bat_center, roi) else (200, 200, 200)
+            cv2.circle(frame, bat_center, 10, color, 2)
+        
+        # Bedienhinweise übersichtlich anzeigen
+        controls = [
+            "Steuerung:",
+            "[SPACE] Pause / Weiter",
+            "[1-5] Geschwindigkeit (1x - 5x)",
+            "[R] Zurücksetzen",
+            "[Y] Bestätigen   [N] Ablehnen",
+            "[Q/ESC] Beenden"
+        ]
+        for i, text in enumerate(controls):
+            cv2.putText(frame, text, (10, 60 + i*25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        
+        cv2.imshow('Ereignisvalidierung', frame)
+        
+        key = cv2.waitKey(int(1000 / (fps * playback_speed))) & 0xFF
+        
+        if key == ord(' ') or key == 32:  # Leertaste: Pause/Weiter
+            paused = not paused
+        elif key in (ord('q'), 27):  # Q oder ESC: Beenden
             break
-        elif key == ord('y'):
-            print(f"Event confirmed at {time_str}.")
+        elif key == ord('y'):  # Bestätigen
             cap.release()
             cv2.destroyAllWindows()
             return True
-        elif key == ord('n'):
-            print(f"Event rejected at {time_str}.")
+        elif key == ord('n'):  # Ablehnen
             cap.release()
             cv2.destroyAllWindows()
             return False
-        elif key == ord(' '):  # Pause/resume toggle
-                paused = not paused
-
-        cap.release()
-        cv2.destroyAllWindows()
-        return False
+        elif ord('1') <= key <= ord('5'):  # Geschwindigkeit anpassen
+            playback_speed = key - ord('0')
+        elif key == ord('r'):  # Zurück zum Anfang
+            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+            current_frame = start_frame
+            paused = False
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    return False
