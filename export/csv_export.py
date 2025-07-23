@@ -82,3 +82,38 @@ def export_results(self):
 
     export_events_to_csv(self.events, self.video_path, csv_path)
     messagebox.showinfo("Export Results", f"Events exported successfully to:\n{csv_path}")
+    
+    
+    
+def export_events_to_csv(events, video_path, csv_path, username=None):
+    """
+    Export event data to CSV
+    
+    Args:
+        events: List of event dictionaries
+        video_path: Path to the source video
+        csv_path: Path where CSV will be saved
+        username: Optional username to include in the CSV
+    """
+    if username is None:
+        try:
+            import getpass
+            username = getpass.getuser()
+        except:
+            username = "unknown"
+            
+    with open(csv_path, 'w', newline='') as csvfile:
+        fieldnames = ['entry_time', 'exit_time', 'duration', 'video_file', 'timestamp', 'user']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        for event in events:
+            if event.get('entry') is not None and event.get('exit') is not None:
+                writer.writerow({
+                    'entry_time': f"{event['entry']:.2f}",
+                    'exit_time': f"{event['exit']:.2f}",
+                    'duration': f"{event['duration']:.2f}",
+                    'video_file': os.path.basename(video_path),
+                    'timestamp': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                    'user': username
+                })
