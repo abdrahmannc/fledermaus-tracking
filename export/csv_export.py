@@ -43,3 +43,29 @@ def parse_start_time_from_filename(filename):
             return datetime.strptime(time_str, "%H%M%S").time()
     # fallback
     return datetime.strptime("00:00:00", "%H:%M:%S").time()
+
+
+
+
+def export_events_to_csv(events, video_path, csv_path):
+    # Parse video start time from filename (adjust if you have better method)
+    start_time = parse_start_time_from_filename(video_path)
+    video_id = os.path.splitext(os.path.basename(video_path))[0]
+
+    with open(csv_path, mode='w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Video", "Startzeit Video", "Zeit", "Uhrzeit"])
+
+        for event in events:
+            elapsed_seconds = event.get("entry", 0)
+            zeit_str = seconds_to_hhmmss(elapsed_seconds)
+            today = datetime.today()
+            start_datetime = datetime.combine(today, start_time)
+            event_datetime = start_datetime + timedelta(seconds=elapsed_seconds)
+            uhrzeit_str = event_datetime.strftime("%H:%M:%S")
+
+            writer.writerow([video_id, start_time.strftime("%H:%M:%S"), zeit_str, uhrzeit_str])
+
+    print(f"Exported {len(events)} events to {csv_path}")
+    
+    
