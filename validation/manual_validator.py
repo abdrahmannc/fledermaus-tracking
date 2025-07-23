@@ -48,3 +48,24 @@ def validate_event(video_path, start_frame, end_frame, roi=None, bat_center=None
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
 
             cv2.imshow('Manual Validation (Y/N, SPACE = pause, Q = quit)', frame)
+            
+            
+        key = cv2.waitKey(30) & 0xFF
+        if key == ord('q'):
+            break
+        elif key == ord('y'):
+            print(f"Event confirmed at {time_str}.")
+            cap.release()
+            cv2.destroyAllWindows()
+            return True
+        elif key == ord('n'):
+            print(f"Event rejected at {time_str}.")
+            cap.release()
+            cv2.destroyAllWindows()
+            return False
+        elif key == ord(' '):  # Pause/resume toggle
+                paused = not paused
+
+        cap.release()
+        cv2.destroyAllWindows()
+        return False
