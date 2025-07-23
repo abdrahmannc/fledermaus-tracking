@@ -22,3 +22,22 @@ from utils.config import (
     NOISE_KERNEL, STABILIZATION_WINDOW,
     COOLDOWN_FRAMES
 )
+
+#
+class VideoDetector:
+    def __init__(self, gui):
+        self.gui = gui
+        self.cap = None
+        self.fps = 0
+        self.total_frames = 0
+        self.processing = False
+        self.back_sub = cv2.createBackgroundSubtractorMOG2()
+        self.motion_history = []
+        self.events = []
+        self.marked_frames = []
+        self.bat_centers = []
+        self.cooldown_counter = 0
+        self.bat_inside = False
+        self.roi = None  # (x, y, w, h)
+        self.prev_gray = None
+        self.video_path = None
