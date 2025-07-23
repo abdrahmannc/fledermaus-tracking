@@ -401,3 +401,125 @@ def compute_dwell_times(events):
             for ev in self.events
             if ev.get("entry") is not None and ev.get("exit") is not None and ev.get("duration") is not None
         ]
+
+
+def load_previous_results(self):
+    # Load and display previously exported CSV result files
+    try:
+        if self.video_path:
+            base_dir = os.path.dirname(self.video_path)
+        else:
+            base_dir = filedialog.askdirectory(title="Select folder with analysis results")
+            if not base_dir:
+                return
+
+        # Search for CSV result files
+        csv_files = glob.glob(os.path.join(base_dir, "*.csv"))
+
+        if not csv_files:
+            messagebox.showinfo("Previous Results", "Keine Analyseergebnisse in diesem Verzeichnis gefunden.")
+            return
+
+        # Create a new window to display list of results
+        results_window = tk.Toplevel(self.gui.root)
+        results_window.title("Frühere Analyseergebnisse")
+        results_window.geometry("600x400")
+
+        results_frame = tk.Frame(results_window)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        label = tk.Label(results_frame, text="Wähle eine Ergebnisdatei zur Ansicht aus:")
+        label.pack(anchor=tk.W, pady=(0, 5))
+
+        listbox = tk.Listbox(results_frame, width=80, height=15)
+        listbox.pack(fill=tk.BOTH, expand=True)
+
+        # Add scrollbar to the listbox
+        scrollbar = tk.Scrollbar(listbox)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        listbox.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=listbox.yview)
+
+        # Populate listbox with result file names
+        for csv_file in csv_files:
+            file_info = f"{os.path.basename(csv_file)}"
+            listbox.insert(tk.END, file_info)
+
+        # Function to view the selected result file
+        def view_selected_result():
+            selection = listbox.curselection()
+            if selection:
+                selected_file = csv_files[selection[0]]
+                self.display_csv_results(selected_file)
+
+        view_button = tk.Button(results_frame, text="Ausgewähltes Ergebnis anzeigen", command=view_selected_result)
+        view_button.pack(pady=10)
+
+    except Exception as e:
+        messagebox.showerror("Fehler", f"Fehler beim Laden der früheren Ergebnisse: {str(e)}")
+
+
+def display_csv_results(self, csv_file):
+    # Open and display content of a selected CSV result file
+    try:
+        import csv
+
+        result_window = tk.Toplevel(self.gui.root)
+        result_window.title(f"Ergebnisse: {os.path.basename(csv_file)}")
+        result_window.geometry("800x600")
+
+        frame = tk.Frame(result_window)
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        text = tk.Text(frame, wrap=tk.NONE)
+        text.pack(fill=tk.BOTH, expand=True)
+
+        # Scrollbars for large CSVs
+        yscroll = tk.Scrollbar(text, command=text.yview)
+        yscroll.pack(side=tk.RIGHT, fill=tk.Y)
+        xscroll = tk.Scrollbar(frame, command=text.xview, orient=tk.HORIZONTAL)
+        xscroll.pack(side=tk.BOTTOM, fill=tk.X)
+        text.config(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+
+        # Read CSV and display content in text box
+        with open(csv_file, 'r') as f:
+            csv_reader = csv.reader(f)
+            headers = next(csv_reader)
+
+            header = "\t".join(headers)
+            text.insert(tk.END, header + "\n")
+            text.insert(tk.END, "-" * len(header) + "\n")
+
+            for row in csv_reader:
+                line = "\t".join(row)
+                text.insert(tk.END, line + "\n")
+
+        # Try to find associated video file based on CSV name
+        video_base = os.path.basename(csv_file).split("_")[0]
+        video_dir = os.path.dirname(csv_file)
+
+        video_files = []
+        for ext in ['.avi', '.mp4', '.mov']:
+            possible_file = os.path.join(video_dir, video_base + ext)
+            if os.path.exists(possible_file):
+                video_files.append(possible_file)
+
+        # Load the video file if found
+        def load_associated_video():
+            if video_files:
+                self.video_path = video_files[0]
+                self.cap = cv2.VideoCapture(self.video_path)
+                self.fps = self.cap.get(cv2.CAP_PROP_FPS) or 30
+                self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                self.gui.update_status(f"Geladen: {os.path.basename(self.video_path)}")
+                self.cap.release()
+                self.cap = None
+            else:
+                messagebox.showinfo("Video Nicht Gefunden", f"Kein zugehöriges Video gefunden für {os.path.basename(csv_file)}")
+
+        if video_files:
+            load_button = tk.Button(frame, text="Zugehöriges Video laden", command=load_associated_video)
+            load_button.pack(pady=10)
+
+    except Exception as e:
+        messagebox.showerror("Fehler", f"Fehler beim Anzeigen der Ergebnisse: {str(e)}")
