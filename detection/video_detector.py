@@ -180,11 +180,18 @@ class VideoDetector:
             if hasattr(self.gui, 'on_detection_finished'):
                 self.gui.root.after(0, self.gui.on_detection_finished)
 
-    def export_marked_video(self):
-        if not hasattr(self, "marked_frames") or not self.marked_frames:
-            messagebox.showinfo("Export Video", "No frames to export")
-            return
-        export_video(self.marked_frames, self.fps, self.video_path)
+
+        def worker():
+            try:
+                self.gui.update_status("Exporting marked video...")
+                export_video(self.marked_frames, self.fps, self.video_path)
+                self.gui.root.after(0, lambda: messagebox.showinfo("Export Video", "Marked video exported successfully."))
+                self.gui.update_status("Marked video export finished.")
+            except Exception as e:
+                self.gui.root.after(0, lambda: messagebox.showerror("Export Video", f"Failed to export video: {str(e)}"))
+                self.gui.update_status("Marked video export failed.")
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def is_inside_zone(self, x, y, zone_coords):
         x1, y1, x2, y2 = zone_coords
