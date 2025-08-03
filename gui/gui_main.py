@@ -18,7 +18,7 @@ class BatDetectorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("IR-Fledermaus-Erkennungssystem")
-
+        self.root.state("zoomed")
         self.MOTION_THRESHOLD = 30
         self.COOLDOWN_FRAMES = 15
         self.MIN_CONTOUR_AREA = 5
