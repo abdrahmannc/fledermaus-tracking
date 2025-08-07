@@ -344,15 +344,16 @@ class VideoDetector:
     
     
 
+  # Determine directory containing videos
     def load_previous_results(self):
-        """Load and display previous analysis results"""
+        """Frühere Analyseergebnisse laden und anzeigen"""
         try:
             # Get the directory containing videos
             if self.video_path:
                 base_dir = os.path.dirname(self.video_path)
             else:
-                # If no video is loaded, ask user for directory
-                base_dir = filedialog.askdirectory(title="Select folder with analysis results")
+              # If no video is loaded, ask the user to select a directory
+                base_dir = filedialog.askdirectory(title="Ordner mit Analyseergebnissen auswählen")
                 if not base_dir:
                     return
                 
@@ -360,19 +361,19 @@ class VideoDetector:
             csv_files = glob.glob(os.path.join(base_dir, "*.csv"))
             
             if not csv_files:
-                messagebox.showinfo("Previous Results", "No analysis results found in this directory.")
+                messagebox.showinfo("Vorherige Ergebnisse", "Keine Analyseergebnisse in diesem Verzeichnis gefunden.")
                 return
                 
             # Create a simple dialog to show available results
             results_window = tk.Toplevel(self.gui.root)
-            results_window.title("Previous Analysis Results")
+            results_window.title("Frühere Analyseergebnisse")
             results_window.geometry("600x400")
             
             # Create a listbox to display results
             results_frame = tk.Frame(results_window)
             results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             
-            label = tk.Label(results_frame, text="Select a result file to view:")
+            label = tk.Label(results_frame, text="Wählen Sie eine Ergebnisdatei zum Anzeigen:")
             label.pack(anchor=tk.W, pady=(0, 5))
             
             listbox = tk.Listbox(results_frame, width=80, height=15)
@@ -395,34 +396,38 @@ class VideoDetector:
                 if selection:
                     selected_file = csv_files[selection[0]]
                     self.display_csv_results(selected_file)
+                    results_window.destroy() 
+            
+            # Add double-click functionality to the listbox
+            listbox.bind("<Double-Button-1>", lambda event: view_selected_result())
                     
-            # Add button to view selected result
-            view_button = tk.Button(results_frame, text="View Selected Result", command=view_selected_result)
+            # Add button to display selected results
+            view_button = tk.Button(results_frame, text="Ausgewählte Ergebnisse anzeigen", command=view_selected_result)
             view_button.pack(pady=10)
-                
+                    
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load previous results: {str(e)}")
+            messagebox.showerror("Fehler", f"Fehler beim Laden früherer Ergebnisse: {str(e)}")
 
 
 
 
 
     def display_csv_results(self, csv_file):
-        """Display the contents of a CSV result file"""
+        """Inhalt einer CSV-Ergebnisdatei anzeigen"""
         try:
-            # Read CSV file with basic Python
+           # Read the CSV file using standard Python functions
             import csv
             
-            # Create a new window to display results
+          # Create a new window to display results
             result_window = tk.Toplevel(self.gui.root)
-            result_window.title(f"Results: {os.path.basename(csv_file)}")
+            result_window.title(f"Ergebnisse: {os.path.basename(csv_file)}")
             result_window.geometry("800x600")
             
             # Create a frame for the results
             frame = tk.Frame(result_window)
             frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             
-            # Create text widget to display CSV content
+            # Create a text widget to display CSV content
             text = tk.Text(frame, wrap=tk.NONE)
             text.pack(fill=tk.BOTH, expand=True)
             
@@ -433,10 +438,10 @@ class VideoDetector:
             xscroll.pack(side=tk.BOTTOM, fill=tk.X)
             text.config(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
             
-            # Read and display the CSV data
+            # Read and display CSV data
             with open(csv_file, 'r') as f:
                 csv_reader = csv.reader(f)
-                headers = next(csv_reader)  # Get header row
+                headers = next(csv_reader) # Get the header row
                 
                 # Format and insert the headers
                 header = "\t".join(headers)
@@ -458,22 +463,49 @@ class VideoDetector:
                 possible_file = os.path.join(video_dir, video_base + ext)
                 if os.path.exists(possible_file):
                     video_files.append(possible_file)
-            
-            def load_associated_video():
-                if video_files:
-                    self.video_path = video_files[0]  # Take the first matching video
-                    self.cap = cv2.VideoCapture(self.video_path)
-                    self.fps = self.cap.get(cv2.CAP_PROP_FPS) or 30
-                    self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    self.gui.update_status(f"Loaded: {os.path.basename(self.video_path)}")
-                    self.cap.release()
-                    self.cap = None
+                
+            def load_associated_video(self):
+               if video_files:
+                # Close the result window
+                result_window.destroy()
+                
+                # Video laden
+                self.video_path = video_files[0] # Take the first matching video 
+                self.cap = cv2.VideoCapture(self.video_path)
+                
+                if not self.cap.isOpened():
+                    messagebox.showerror("Fehler", "Das Video konnte nicht geöffnet werden.")
+                    return
+                    
+                  # Set video parameters
+                fps = self.cap.get(cv2.CAP_PROP_FPS)
+                self.fps = fps if fps and fps > 0 else 30
+                self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                self.current_frame_idx = 0
+                
+                # Read and display the first frame
+                ret, frame = self.cap.read()
+                if ret:
+                      # Reset to the first frame
+                    self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    
+                    # Resize frame for display
+                    frame_small = cv2.resize(frame, None, fx=self.gui.scale_factor, fy=self.gui.scale_factor)
+                    
+                      # Show the frame in the main window
+                    self.gui.show_frame(frame_small)
+                    
+                    # Update status and enable UI elements
+                    self.gui.update_status(f"Geladen: {os.path.basename(self.video_path)}")
+                    self.gui.btn_play.config(state=tk.NORMAL)
+                    self.gui.btn_pause.config(state=tk.NORMAL)
+                    self.gui.btn_stop_video.config(state=tk.NORMAL)
+                    self.gui.btn_select_roi.config(state=tk.NORMAL)
+                    
+                     # Update time label
+                    self.gui.update_time_label(0)
                 else:
-                    messagebox.showinfo("Video Not Found", f"Could not find associated video file for {os.path.basename(csv_file)}")
-            
-            if video_files:
-                load_button = tk.Button(frame, text="Load Associated Video", command=load_associated_video)
-                load_button.pack(pady=10)
+                            messagebox.showerror("Fehler", "Video konnte nicht gelesen werden.")
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to display results: {str(e)}")
+            messagebox.showerror("Fehler", f"Fehler beim Anzeigen der Ergebnisse: {str(e)}")
