@@ -1,0 +1,23 @@
+# Enhanced Dependencies for Fledermaus-Detektor Pro
+# Run: pip install -r requirements.txt
+
+# Core dependencies (existing)
+opencv-python>=4.5.0
+numpy>=1.21.0
+Pillow>=8.3.0
+matplotlib>=3.5.0
+
+# New dependencies for enhanced features
+reportlab>=3.6.0          # PDF report generation
+python-dateutil>=2.8.0    # Enhanced date/time handling
+
+# 3D Analysis and Stereo Vision dependencies
+scipy>=1.7.0              # Scientific computing for 3D analysis
+open3d>=0.15.0            # 3D data processing and visualization (optional)
+shapely>=2.0.0            # Polygon validation and geometric operations
+
+# Optional dependencies for enhanced functionality
+# Uncomment if you want these features:
+plotly>=5.0.0             # Interactive 3D visualizations
+# fpdf2>=2.5.0             # Alternative PDF library
+# jinja2>=3.0.0            # Template-based reporting
