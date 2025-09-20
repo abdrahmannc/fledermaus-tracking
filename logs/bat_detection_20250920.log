@@ -1,0 +1,4 @@
+2025-09-20 17:13:14,052 - BatDetection - INFO - [1460] - Bat Detection Application Logger Initialized
+2025-09-20 17:13:14,052 - BatDetection - INFO - [1460] - VideoDetector initializing...
+2025-09-20 17:13:14,102 - BatDetection - INFO - [1460] - Error handling system initialized
+2025-09-20 17:13:14,103 - BatDetection - INFO - [1460] - VideoDetector initialization completed
