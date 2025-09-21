@@ -1,0 +1,23 @@
+# Optimized Requirements for Smaller EXE
+# Run: pip install -r requirements_minimal.txt
+
+# Core dependencies (lighter versions)
+opencv-python>=4.5.0      # Remove opencv-contrib-python if not needed
+numpy>=1.21.0
+Pillow>=10.3.0
+
+# Essential GUI
+tkinter                    # Usually included with Python
+
+# Optional dependencies (comment out if not needed)
+# matplotlib>=3.5.0        # Only if you need plotting - adds ~60MB
+# scipy>=1.7.0             # Only if you need scientific computing - adds ~40MB
+# plotly>=5.0.0            # Only if you need interactive plots - adds ~25MB
+# open3d>=0.15.0           # Only if you need 3D processing - adds ~120MB
+# reportlab>=3.6.0         # Only if you need PDF reports - adds ~15MB
+# shapely>=2.0.0           # Only if you need geometric operations - adds ~10MB
+
+# Lightweight alternatives
+# For basic plotting: use matplotlib only when needed
+# For PDF: consider using fpdf2 instead of reportlab (smaller)
+# For 3D: consider removing if not essential
