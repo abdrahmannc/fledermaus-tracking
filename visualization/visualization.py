@@ -351,11 +351,16 @@ def _plot_activity_timeline_internal(bat_paths, output_dir, total_frames=None, f
     activity = defaultdict(int)
     for bat_id, path in bat_paths.items():
         for (t, x, y) in path:
-            sec = int(t)
+            sec = int(float(t))  # Ensure safe conversion from float to int
             activity[sec] += 1
 
-    duration_sec = int(total_frames / fps) if total_frames else max(activity.keys()) + 1
-    time_axis = np.arange(duration_sec)
+    # Ensure duration_sec is properly converted to integer
+    if total_frames and fps:
+        duration_sec = int(float(total_frames) / float(fps))
+    else:
+        duration_sec = max(activity.keys()) + 1 if activity else 1
+    
+    time_axis = np.arange(int(duration_sec))  # Explicitly convert to int for np.arange
     values = [activity.get(t, 0) for t in time_axis]
 
     plt.figure(figsize=(12, 2.5))
@@ -451,7 +456,8 @@ def export_flightMap(bat_paths_with_time, output_dir, filename_base=None, user=N
             
             # Add direction arrows
             if len(x) > 5:
-                for i in range(2, len(x)-2, max(1, len(x)//8)):
+                step = max(1, int(len(x)//8))  # Ensure step is an integer
+                for i in range(2, len(x)-2, step):
                     dx = x[i+1] - x[i-1]
                     dy = y[i+1] - y[i-1]
                     if dx != 0 or dy != 0:
