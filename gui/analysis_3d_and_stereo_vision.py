@@ -13,18 +13,17 @@ import importlib.util
 
 # Import the actual 3D analysis functions from the detection module
 try:
-    # Use importlib to import module with number in name
-    import importlib.util
+    # PyInstaller-compatible import approach
     import sys
+    import os
     
-    # Load the 3D analysis module
-    spec = importlib.util.spec_from_file_location(
-        "analysis_3d_module", 
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), "detection", "3d_analysis_and_stereo_vision.py")
-    )
-    analysis_3d_module = importlib.util.module_from_spec(spec)
-    sys.modules["analysis_3d_module"] = analysis_3d_module
-    spec.loader.exec_module(analysis_3d_module)
+    # Add detection folder to path for import
+    detection_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "detection")
+    if detection_path not in sys.path:
+        sys.path.insert(0, detection_path)
+    
+    # Import using __import__ with the problematic filename
+    analysis_3d_module = __import__("3d_analysis_and_stereo_vision")
     
     # Import functions from the loaded module
     format_time = analysis_3d_module.format_time
