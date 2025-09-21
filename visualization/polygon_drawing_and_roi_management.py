@@ -378,6 +378,7 @@ def redraw_polygons_on_canvas(self):
                                             fill="darkgreen", font=("Arial", 10, "bold"),
                                             tags=('drawn', 'polygon'))  # Add tags
                                             
+                                            
     except tk.TclError as e:
         if "invalid command name" in str(e):
             print(f"Canvas destroyed during polygon redraw: {e}")
