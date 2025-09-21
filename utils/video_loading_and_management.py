@@ -191,14 +191,25 @@ def on_select_roi(self, event=None):
             # ROI selected - status shown in GUI
             # Use centralized state management
             self.update_start_button_state()
-            cap = cv2.VideoCapture(self.detector.video_path)
-            ret, frame = cap.read()
-            cap.release()
-            if ret:
-                x, y, w, h = map(int, roi)
-                frame_with_roi = frame.copy()
-                cv2.rectangle(frame_with_roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                self.show_frame(frame_with_roi)
+            
+            # FIXED: Reuse existing frame instead of creating new VideoCapture
+            # This prevents multiple video displays and improves performance
+            if hasattr(self, 'original_frame') and self.original_frame is not None:
+                # Use existing frame from the GUI
+                frame = self.original_frame.copy()
+            else:
+                # Fallback: capture new frame only if no existing frame available
+                cap = cv2.VideoCapture(self.detector.video_path)
+                ret, frame = cap.read()
+                cap.release()
+                if not ret:
+                    return
+            
+            # Draw ROI rectangle on frame
+            x, y, w, h = map(int, roi)
+            frame_with_roi = frame.copy()
+            cv2.rectangle(frame_with_roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            self.show_frame(frame_with_roi)
         else:
             # ROI selection cancelled - handled internally
             # Update button state even if ROI selection was cancelled
