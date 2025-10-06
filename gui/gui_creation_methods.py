@@ -77,7 +77,7 @@ def create_scrollable_control_panel(self, parent):
         
         # Create compact control sections in scrollable frame
         control_frame = ttk.LabelFrame(self.scrollable_control_frame, text="Steuerung", padding=5)  # Reduced from 10
-        control_frame.pack(fill=tk.X, padx=3, pady=3)  # Reduced from 5
+        control_frame.pack(fill=tk.X, padx=3, pady=3)  
         
         # Create all control sections with compact spacing
         self.create_file_controls(control_frame)
@@ -136,7 +136,7 @@ def create_video_area(self, parent):
         parent.add(video_container, weight=1)
         
         # Video frame with reduced padding
-        video_frame = ttk.LabelFrame(video_container, text="Video-Anzeige", padding=3)  # Reduced from 5
+        video_frame = ttk.LabelFrame(video_container, text="Video-Anzeige", padding=3)  
         video_frame.pack(fill=tk.BOTH, expand=True, padx=3, pady=(0, 3))  # Reduced padding
         
         # Responsive canvas size optimized for 14-inch screens
@@ -146,11 +146,11 @@ def create_video_area(self, parent):
         if screen_width <= 1366:
             # 14-inch screens: ensure adequate space for video controls below canvas
             canvas_width = min(640, screen_width - 350)
-            canvas_height = min(280, screen_height - 400)  # Reduced from 300 to leave more space for controls
+            canvas_height = min(280, screen_height - 400) 
         elif screen_width <= 1600:
             # Medium screens: slightly larger
             canvas_width = min(720, screen_width - 400)
-            canvas_height = min(330, screen_height - 420)  # Reduced from 350
+            canvas_height = min(330, screen_height - 420)  
         else:
             # Large screens: full size
             canvas_width = 800
@@ -159,7 +159,7 @@ def create_video_area(self, parent):
         self.canvas = tk.Canvas(video_frame, bg='#222', 
                                width=canvas_width, height=canvas_height, 
                                highlightthickness=1, relief=tk.SUNKEN)
-        self.canvas.pack(expand=True, fill=tk.BOTH, pady=(0, 3))  # Reduced from 5
+        self.canvas.pack(expand=True, fill=tk.BOTH, pady=(0, 3))  
         
         # Bind mouse events for polygon drawing
         self.canvas.bind("<Button-1>", self.on_canvas_click)
@@ -318,8 +318,8 @@ def create_results_area(self, parent):
         results_container = ttk.Frame(parent)
         parent.add(results_container, weight=0)
         
-        results_frame = ttk.LabelFrame(results_container, text="Erkennungsergebnisse", padding=3)  # Reduced from 5
-        results_frame.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)  # Reduced from 5
+        results_frame = ttk.LabelFrame(results_container, text="Erkennungsergebnisse", padding=3)  
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=3, pady=3)  
         
         # Results table with scrollbar - more compact
         self.tree = ttk.Treeview(results_frame, columns=('Einflug', 'Ausflug', 'Dauer'), 
@@ -329,9 +329,9 @@ def create_results_area(self, parent):
         self.tree.heading('Dauer', text='Dauer')
         
         # Optimize column widths for small screens
-        self.tree.column('Einflug', width=100, anchor=tk.CENTER)  # Reduced from 120
-        self.tree.column('Ausflug', width=100, anchor=tk.CENTER)  # Reduced from 120
-        self.tree.column('Dauer', width=80, anchor=tk.CENTER)  # Reduced from 120
+        self.tree.column('Einflug', width=100, anchor=tk.CENTER)   
+        self.tree.column('Ausflug', width=100, anchor=tk.CENTER)   
+        self.tree.column('Dauer', width=80, anchor=tk.CENTER)   
         
         scrollbar = ttk.Scrollbar(results_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
@@ -346,15 +346,15 @@ def create_file_controls(self, parent):
         
         # Primary file operations
         primary_frame = ttk.Frame(file_frame)
-        primary_frame.pack(fill=tk.X, pady=(0, 3))  # Reduced from 5
+        primary_frame.pack(fill=tk.X, pady=(0, 3))  
         
         self.btn_load = ttk.Button(primary_frame, text="📹 Video laden", 
                                   command=self.load_video, style="PDF.TButton")
         self.btn_load.pack(fill=tk.X, pady=1)
         
         # ROI and polygon controls - more compact layout
-        roi_frame = ttk.LabelFrame(file_frame, text="Bereich", padding=2)  # Reduced from 3
-        roi_frame.pack(fill=tk.X, pady=(0, 3))  # Reduced from 5
+        roi_frame = ttk.LabelFrame(file_frame, text="Bereich", padding=2)  
+        roi_frame.pack(fill=tk.X, pady=(0, 3))  
         
         # Use grid layout for more compact arrangement
         self.btn_select_roi = ttk.Button(roi_frame, text="🎯 ROI", 
@@ -377,7 +377,7 @@ def create_file_controls(self, parent):
         ToolTip(self.btn_clear_polygons, "Löscht alle gezeichneten Bereiche (ROI oder Polygon).")
         
         # Results access - more compact
-        results_frame = ttk.LabelFrame(file_frame, text="Ergebnisse", padding=2)  # Reduced from 3
+        results_frame = ttk.LabelFrame(file_frame, text="Ergebnisse", padding=2)  
         results_frame.pack(fill=tk.X)
         
         # Use grid for results buttons too
@@ -402,8 +402,8 @@ def create_detection_controls(self, parent):
         detect_frame.pack(fill=tk.X, pady=(0, 5))  # Reduced from 8
         
         # Critical action buttons section - more compact
-        critical_frame = ttk.LabelFrame(detect_frame, text="Hauptaktionen", padding=3)  # Reduced from 5
-        critical_frame.pack(fill=tk.X, pady=(0, 3))  # Reduced from 5
+        critical_frame = ttk.LabelFrame(detect_frame, text="Hauptaktionen", padding=3)  
+        critical_frame.pack(fill=tk.X, pady=(0, 3))  
         
         # Use grid for main action buttons to save space
         self.btn_start = ttk.Button(critical_frame, text="🚀 Start", 
@@ -430,8 +430,8 @@ def create_detection_controls(self, parent):
         self.processing_mode = tk.StringVar(value="live")
 
         # Window visibility control - more compact
-        window_frame = ttk.LabelFrame(detect_frame, text="Fenster", padding=3)  # Reduced from 5
-        window_frame.pack(fill=tk.X, pady=(3, 3))  # Reduced from 5
+        window_frame = ttk.LabelFrame(detect_frame, text="Fenster", padding=3)  
+        window_frame.pack(fill=tk.X, pady=(3, 3))  
         
         # Initialize show_window variable
         self.show_window = tk.BooleanVar(value=True)
@@ -453,11 +453,11 @@ def create_detection_controls(self, parent):
         window_info_label.pack(pady=(1, 0))
         
         # Separator
-        ttk.Separator(detect_frame, orient='horizontal').pack(fill=tk.X, pady=3)  # Reduced from 5
+        ttk.Separator(detect_frame, orient='horizontal').pack(fill=tk.X, pady=3)  
         
         # Validation and analysis section - more compact
-        analysis_frame = ttk.LabelFrame(detect_frame, text="Analyse", padding=3)  # Reduced from 5
-        analysis_frame.pack(fill=tk.X, pady=(0, 3))  # Reduced from 5
+        analysis_frame = ttk.LabelFrame(detect_frame, text="Analyse", padding=3)  
+        analysis_frame.pack(fill=tk.X, pady=(0, 3))  
         
         # Use grid for validation buttons
         self.btn_validate = ttk.Button(analysis_frame, text="✅ Validieren", 
@@ -506,8 +506,8 @@ def create_export_controls(self, parent):
         export_frame.pack(fill=tk.X, pady=(0, 5))  # Reduced from 8
         
         # Primary exports - use grid layout for compactness
-        primary_export = ttk.LabelFrame(export_frame, text="Berichte", padding=2)  # Reduced from 3
-        primary_export.pack(fill=tk.X, pady=(0, 3))  # Reduced from 5
+        primary_export = ttk.LabelFrame(export_frame, text="Berichte", padding=2)  
+        primary_export.pack(fill=tk.X, pady=(0, 3))  
         
         self.btn_export_csv = ttk.Button(primary_export, text="📊 CSV", 
                                        state=tk.DISABLED, command=self.export_results)
@@ -522,7 +522,7 @@ def create_export_controls(self, parent):
         primary_export.columnconfigure(1, weight=1)
         
         # Visualization exports
-        viz_export = ttk.LabelFrame(export_frame, text="Visualisierung", padding=2)  # Reduced from 3
+        viz_export = ttk.LabelFrame(export_frame, text="Visualisierung", padding=2) 
         viz_export.pack(fill=tk.X)
         
         self.btn_export_flightMap = ttk.Button(viz_export, text="🗺️ Flugkarte", 
@@ -542,7 +542,7 @@ def create_3d_controls(self, parent):
         self.mode_var = tk.StringVar(value="2D")
         
         mode_frame = ttk.Frame(stereo_frame)
-        mode_frame.pack(fill=tk.X, pady=(0, 3))  # Reduced from 5
+        mode_frame.pack(fill=tk.X, pady=(0, 3))  
         
         ttk.Label(mode_frame, text="Modus:", font=("Arial", 8)).pack(side=tk.LEFT)
         
@@ -557,11 +557,11 @@ def create_3d_controls(self, parent):
         self.btn_mode_3d.pack(side=tk.LEFT, padx=3)  # Reduced padding
         
         # 3D specific controls (initially hidden) - more compact
-        self.stereo_3d_frame = ttk.LabelFrame(stereo_frame, text="3D Einstellungen", padding=3)  # Reduced from 5
+        self.stereo_3d_frame = ttk.LabelFrame(stereo_frame, text="3D Einstellungen", padding=3)  
         
         # Stereo mode selection - compact
         stereo_mode_frame = ttk.Frame(self.stereo_3d_frame)
-        stereo_mode_frame.pack(fill=tk.X, pady=(0, 2))  # Reduced from 3
+        stereo_mode_frame.pack(fill=tk.X, pady=(0, 2))  
         
         ttk.Label(stereo_mode_frame, text="Stereo:", font=("Arial", 8)).pack(side=tk.LEFT)
         self.stereo_mode_var = tk.StringVar(value="side_by_side")
@@ -571,7 +571,7 @@ def create_3d_controls(self, parent):
         
         # Calibration and visualization - use grid for compactness
         controls_grid = ttk.Frame(self.stereo_3d_frame)
-        controls_grid.pack(fill=tk.X, pady=2)  # Reduced from 3
+        controls_grid.pack(fill=tk.X, pady=2)  
         
         self.btn_calibrate = ttk.Button(controls_grid, text="📐 Kalibrieren", 
                                        command=self.start_stereo_calibration)
