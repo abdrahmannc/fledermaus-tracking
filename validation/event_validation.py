@@ -163,90 +163,134 @@ def create_event_grid_view(self, parent, events):
     # Create scrollable frame
     canvas = tk.Canvas(parent)
     scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-    scrollable_frame = ttk.Frame(canvas)
-    
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-    )
-    
-    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
 
+    # Place canvas and scrollbar
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Frame that will hold the thumbnails inside the canvas
+    scrollable_frame = ttk.Frame(canvas)
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+    # Make canvas scroll region adapt to content
+    def _on_configure(event=None):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+    scrollable_frame.bind("<Configure>", _on_configure)
+
+    # Bind mousewheel scrolling (optional, works on Windows)
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+    # Populate thumbnails after layout so we know available width
+    def populate_thumbnails():
+        try:
+            canvas.update_idletasks()
+            avail_width = scrollable_frame.winfo_width() or canvas.winfo_width() or 800
+            # choose thumbnail width+padding ~ 240 px
+            cols = max(1, avail_width // 240)
+            self.generate_event_thumbnails(scrollable_frame, events, int(cols))
+        except Exception as e:
+            print(f"[ERROR] populate_thumbnails failed: {e}")
+
+    # Delay population slightly so geometry is settled
+    parent.after(100, populate_thumbnails)
 
 
 def generate_event_thumbnails(self, parent, events, cols):
     """Generate thumbnail images for each event"""
+    cap_created_locally = False
     try:
-        if not hasattr(self.detector, 'cap') or not self.detector.cap:
+        # Choose capture: prefer detector.cap if alive, otherwise open new
+        cap = None
+        if hasattr(self.detector, 'cap') and getattr(self.detector, 'cap', None):
+            try:
+                if self.detector.cap.isOpened():
+                    cap = self.detector.cap
+            except Exception:
+                cap = None
+
+        if cap is None:
             cap = cv2.VideoCapture(self.video_path)
-        else:
-            cap = self.detector.cap
-        
+            cap_created_locally = True
+
         fps = cap.get(cv2.CAP_PROP_FPS) or 30
-        
+
         for idx, event in enumerate(events):
             row = idx // cols
             col = idx % cols
-            
+
             # Create event frame
             event_frame = ttk.LabelFrame(parent, text=f"Ereignis {idx + 1}", padding=5)
             event_frame.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
-            
-            # Configure grid weights
+
+            # Configure grid weights so columns expand
             parent.grid_columnconfigure(col, weight=1)
-            
+
             # Extract key frame from event
-            start_time = event.get('entry', 0)
-            end_time = event.get('exit', start_time + 1)
-            mid_time = (start_time + end_time) / 2
-            
+            start_time = float(event.get('entry', 0) or 0)
+            end_time = float(event.get('exit', start_time + 1) or (start_time + 1))
+            mid_time = (start_time + end_time) / 2.0
+
             # Set frame position
-            mid_frame = int(mid_time * fps)
+            mid_frame = max(0, int(mid_time * fps))
             cap.set(cv2.CAP_PROP_POS_FRAMES, mid_frame)
             ret, frame = cap.read()
-            
-            if ret:
+
+            if ret and frame is not None:
                 # Apply ROI or polygon highlighting
                 highlighted_frame = self.highlight_detection_area(frame, event)
-                
+
                 # Resize for thumbnail
-                thumbnail = cv2.resize(highlighted_frame, (200, 150))
+                thumb_w, thumb_h = 200, 150
+                thumbnail = cv2.resize(highlighted_frame, (thumb_w, thumb_h))
                 thumbnail_rgb = cv2.cvtColor(thumbnail, cv2.COLOR_BGR2RGB)
-                
+
                 # Convert to PhotoImage
                 pil_image = Image.fromarray(thumbnail_rgb)
                 photo = ImageTk.PhotoImage(pil_image)
-                
+
                 # Create thumbnail label with click handler
                 thumb_label = tk.Label(event_frame, image=photo, cursor="hand2")
-                thumb_label.image = photo  # Keep reference
+                thumb_label.image = photo  # Keep reference to avoid GC
                 thumb_label.pack(pady=(0, 5))
-                
+
                 # Bind click to show event details
                 thumb_label.bind("<Button-1>", lambda e, ev=event, i=idx: self.show_event_detail(ev, i))
-            
+            else:
+                # No frame available -> show placeholder
+                placeholder = ttk.Label(event_frame, text="Kein Vorschaubild verfügbar", width=30, anchor="center")
+                placeholder.pack(pady=(10, 10))
+
             # Event info
             info_text = f"Zeit: {start_time:.1f}s - {end_time:.1f}s\nDauer: {event.get('duration', 0):.1f}s"
             info_label = ttk.Label(event_frame, text=info_text, font=('Arial', 8))
             info_label.pack()
-            
+
             # Validation buttons for individual events
             btn_frame = ttk.Frame(event_frame)
             btn_frame.pack(fill=tk.X, pady=(5, 0))
-            
+
             approve_btn = ttk.Button(btn_frame, text="✅", width=3,
                                     command=lambda i=idx: self.mark_event_validation(i, 'approved'))
             approve_btn.pack(side=tk.LEFT, padx=(0, 2))
-            
+
             reject_btn = ttk.Button(btn_frame, text="❌", width=3,
                                     command=lambda i=idx: self.mark_event_validation(i, 'rejected'))
             reject_btn.pack(side=tk.LEFT)
-            
     except Exception as e:
         print(f"[ERROR] Error generating thumbnails: {e}")
         error_label = ttk.Label(parent, text=f"Fehler beim Laden der Ereignisse: {str(e)}")
         error_label.pack(pady=20)
+    finally:
+        # Release capture if we created it locally
+        try:
+            if cap_created_locally and cap is not None:
+                cap.release()
+        except Exception:
+            pass
+
 
 
 
