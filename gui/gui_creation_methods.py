@@ -131,187 +131,185 @@ def create_display_panel(self, parent):
             self.root.after(100, lambda: display_paned.sashpos(0, 420))  # Increased from 400
     
 def create_video_area(self, parent):
-        """Creates responsive video display area optimized for 14-inch screens"""
-        video_container = ttk.Frame(parent)
-        parent.add(video_container, weight=1)
-        
-        # Video frame with reduced padding
-        video_frame = ttk.LabelFrame(video_container, text="Video-Anzeige", padding=3)  
-        video_frame.pack(fill=tk.BOTH, expand=True, padx=3, pady=(0, 3))  # Reduced padding
-        
-        # Responsive canvas size optimized for 14-inch screens
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        
-        if screen_width <= 1366:
-            # 14-inch screens: ensure adequate space for video controls below canvas
-            canvas_width = min(640, screen_width - 350)
-            canvas_height = min(280, screen_height - 400) 
-        elif screen_width <= 1600:
-            # Medium screens: slightly larger
-            canvas_width = min(720, screen_width - 400)
-            canvas_height = min(330, screen_height - 420)  
-        else:
-            # Large screens: full size
-            canvas_width = 800
-            canvas_height = 420  # Reduced from 450 to ensure controls fit
-        
-        self.canvas = tk.Canvas(video_frame, bg='#222', 
-                               width=canvas_width, height=canvas_height, 
-                               highlightthickness=1, relief=tk.SUNKEN)
-        self.canvas.pack(expand=True, fill=tk.BOTH, pady=(0, 3))  
-        
-        # Bind mouse events for polygon drawing
-        self.canvas.bind("<Button-1>", self.on_canvas_click)
-        self.canvas.bind("<Motion>", self.on_canvas_motion)
-        self.canvas.bind("<Button-3>", self.on_canvas_right_click)
-        
-        # Bind keyboard events for polygon drawing
-        self.canvas.bind("<KeyPress-Escape>", self.on_escape_key)
-        # Make canvas focusable to receive key events
-        self.canvas.config(highlightthickness=1)
-        self.canvas.focus_set()
-        
-        # Video controls (always visible at bottom of video area)
-        self.create_video_controls(video_frame)
+    """Creates responsive video display area optimized for 14-inch screens"""
+    video_container = ttk.Frame(parent)
+    parent.add(video_container, weight=1)
+    
+    # Create main video frame without LabelFrame to avoid background issues
+    video_frame = ttk.Frame(video_container, relief=tk.RIDGE, borderwidth=1)
+    video_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=0)
+    
+    # Title bar
+    title_bar = ttk.Frame(video_frame, style='Card.TFrame')
+    title_bar.pack(fill=tk.X, pady=0)
+    ttk.Label(title_bar, text="Video-Anzeige", font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=5, pady=2)
+    
+    # Create a container that will hold both canvas and controls tightly
+    content_frame = ttk.Frame(video_frame)
+    content_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+    
+    # Responsive canvas size optimized for 14-inch screens
+    screen_width = self.root.winfo_screenwidth()
+    screen_height = self.root.winfo_screenheight()
+    
+    if screen_width <= 1366:
+        canvas_width = min(640, screen_width - 350)
+        canvas_height = min(280, screen_height - 450)  # Leave more room for controls
+    elif screen_width <= 1600:
+        canvas_width = min(720, screen_width - 400)
+        canvas_height = min(330, screen_height - 470)  
+    else:
+        canvas_width = 800
+        canvas_height = 380  # Reduced to ensure controls fit
+    
+    # Canvas with strict dimensions and no extra space
+    self.canvas = tk.Canvas(content_frame, bg='#222', 
+                           width=canvas_width, height=canvas_height, 
+                           highlightthickness=0, relief=tk.FLAT, bd=0)
+    self.canvas.pack(side=tk.TOP, fill=tk.NONE, expand=False, pady=0, padx=0)
+    
+    # Bind mouse events for polygon drawing
+    self.canvas.bind("<Button-1>", self.on_canvas_click)
+    self.canvas.bind("<Motion>", self.on_canvas_motion)
+    self.canvas.bind("<Button-3>", self.on_canvas_right_click)
+    self.canvas.bind("<KeyPress-Escape>", self.on_escape_key)
+    self.canvas.focus_set()
+    
+    # Video controls directly below canvas with no gap
+    self.create_video_controls(content_frame)
     
 def create_video_controls(self, parent):
-        """Creates comprehensive video controls fully optimized for 14-inch screens"""
-        video_controls = ttk.Frame(parent)
-        video_controls.pack(fill=tk.X, pady=(0, 0))
+    """Creates comprehensive video controls fully optimized for 14-inch screens"""
+    # Main controls container - pack immediately after canvas
+    video_controls = ttk.Frame(parent, style='Controls.TFrame')
+    video_controls.pack(side=tk.TOP, fill=tk.X, pady=0, padx=0)
+    
+    # Get screen width for responsive adjustments
+    screen_width = self.root.winfo_screenwidth()
+    
+    # Timeline/Progress bar section
+    timeline_frame = ttk.Frame(video_controls)
+    timeline_frame.pack(fill=tk.X, pady=0, padx=2)
+    
+    # Timeline label - minimal width
+    if screen_width <= 1366:
+        timeline_label = ttk.Label(timeline_frame, text="Time:", font=("Arial", 7), width=4)
+    else:
+        timeline_label = ttk.Label(timeline_frame, text="Timeline:", font=("Arial", 8), width=6)
+    timeline_label.pack(side=tk.LEFT, padx=(0, 2))
+    
+    # Timeline scale
+    self.timeline_var = tk.DoubleVar(value=0)
+    
+    if screen_width <= 1366:
+        timeline_length = min(400, screen_width - 450)
+    elif screen_width <= 1600:
+        timeline_length = 450
+    else:
+        timeline_length = 500
         
-        # Get screen width for responsive adjustments
-        screen_width = self.root.winfo_screenwidth()
+    self.timeline_scale = tk.Scale(timeline_frame, 
+                                  from_=0, to=100, 
+                                  orient=tk.HORIZONTAL,
+                                  variable=self.timeline_var,
+                                  showvalue=0,
+                                  command=self.on_timeline_change,
+                                  length=timeline_length)
+    self.timeline_scale.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 3))
+    
+    # Time display
+    self.time_var = tk.StringVar(value="00:00:00 / 00:00:00")
+    if screen_width <= 1366:
+        time_label = ttk.Label(timeline_frame, textvariable=self.time_var, width=13, font=('Consolas', 7))
+    else:
+        time_label = ttk.Label(timeline_frame, textvariable=self.time_var, width=20, font=('Consolas', 8))
+    time_label.pack(side=tk.LEFT)
+    
+    # Primary controls row
+    controls_row1 = ttk.Frame(video_controls)
+    controls_row1.pack(fill=tk.X, pady=1, padx=2)
+    
+    # Playback controls
+    button_width = 2 if screen_width <= 1366 else 3
+    button_padding = 0 if screen_width <= 1366 else 1
+    
+    self.btn_step_back = ttk.Button(controls_row1, text="⏮", command=self.step_backward, 
+                                   state=tk.DISABLED, width=button_width)
+    self.btn_step_back.pack(side=tk.LEFT, padx=button_padding)
+    
+    self.btn_play = ttk.Button(controls_row1, text="▶", command=self.play_video, 
+                              state=tk.DISABLED, width=button_width)
+    self.btn_play.pack(side=tk.LEFT, padx=button_padding)
+    
+    self.btn_pause = ttk.Button(controls_row1, text="⏸", command=self.pause_video, 
+                               state=tk.DISABLED, width=button_width)
+    self.btn_pause.pack(side=tk.LEFT, padx=button_padding)
+    
+    self.btn_stop_video = ttk.Button(controls_row1, text="⏹", command=self.stop_video, 
+                                    state=tk.DISABLED, width=button_width)
+    self.btn_stop_video.pack(side=tk.LEFT, padx=button_padding)
+    
+    self.btn_step_forward = ttk.Button(controls_row1, text="⏭", command=self.step_forward, 
+                                      state=tk.DISABLED, width=button_width)
+    self.btn_step_forward.pack(side=tk.LEFT, padx=button_padding)
+    
+    # Separator
+    separator_padx = 3 if screen_width <= 1366 else 5
+    ttk.Separator(controls_row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=separator_padx)
+    
+    # Frame navigation
+    if screen_width <= 1366:
+        ttk.Label(controls_row1, text="Fr:", font=("Arial", 7)).pack(side=tk.LEFT, padx=(0, 1))
+        frame_width = 5
+    else:
+        ttk.Label(controls_row1, text="Frame:", font=("Arial", 8)).pack(side=tk.LEFT, padx=(0, 1))
+        frame_width = 6
         
-        # Timeline/Progress bar section - ultra-compact for 14-inch screens
-        timeline_frame = ttk.Frame(video_controls)
-        timeline_frame.pack(fill=tk.X, pady=(0, 2))  # Further reduced from 3
+    self.frame_var = tk.StringVar(value="0")
+    self.frame_entry = ttk.Entry(controls_row1, textvariable=self.frame_var, width=frame_width, 
+                                font=("Arial", 7 if screen_width <= 1366 else 8))
+    self.frame_entry.pack(side=tk.LEFT, padx=(0, 1))
+    self.frame_entry.bind("<Return>", self.goto_frame)
+    
+    ttk.Button(controls_row1, text="Go", command=self.goto_frame, width=2).pack(side=tk.LEFT, padx=1)
+    
+    # Speed and time controls (second row)
+    controls_row2 = ttk.Frame(video_controls)
+    controls_row2.pack(fill=tk.X, pady=1, padx=2)
+    
+    # Speed control
+    if screen_width <= 1366:
+        ttk.Label(controls_row2, text="Spd:", font=("Arial", 7)).pack(side=tk.LEFT, padx=(0, 1))
+        speed_width = 4
+        speed_font = ("Arial", 7)
+    else:
+        ttk.Label(controls_row2, text="Speed:", font=("Arial", 8)).pack(side=tk.LEFT, padx=(0, 1))
+        speed_width = 5
+        speed_font = ("Arial", 8)
         
-        # Timeline label - minimal width
-        if screen_width <= 1366:
-            timeline_label = ttk.Label(timeline_frame, text="Time:", font=("Arial", 7), width=4)
-        else:
-            timeline_label = ttk.Label(timeline_frame, text="Timeline:", font=("Arial", 8), width=6)
-        timeline_label.pack(side=tk.LEFT, padx=(0, 2))  # Further reduced from 3
+    self.speed_var = tk.StringVar(value="1.0x")
+    self.speed_options = ["0.25x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x"]
+    self.speed_box = ttk.Combobox(controls_row2, textvariable=self.speed_var, 
+                                 values=self.speed_options, width=speed_width, state="readonly", font=speed_font)
+    self.speed_box.pack(side=tk.LEFT, padx=(0, 3 if screen_width <= 1366 else 5))
+    self.speed_box.bind("<<ComboboxSelected>>", self.set_speed)
+    
+    # Quick jump controls
+    jump_label_padx = (3, 1) if screen_width <= 1366 else (5, 1)
+    jump_button_width = 3 if screen_width <= 1366 else 4
+    
+    if screen_width <= 1366:
+        ttk.Label(controls_row2, text="Jmp:", font=("Arial", 7)).pack(side=tk.LEFT, padx=jump_label_padx)
+    else:
+        ttk.Label(controls_row2, text="Jump:", font=("Arial", 8)).pack(side=tk.LEFT, padx=jump_label_padx)
         
-        # Timeline scale - fully responsive width
-        self.timeline_var = tk.DoubleVar(value=0)
-        
-        # Calculate optimal timeline length based on available space
-        if screen_width <= 1366:
-            # 14-inch screens: maximize timeline width for full visibility
-            timeline_length = min(400, screen_width - 450)  # Ensure timeline extends fully
-        elif screen_width <= 1600:
-            timeline_length = 450
-        else:
-            timeline_length = 500
-            
-        self.timeline_scale = tk.Scale(timeline_frame, 
-                                      from_=0, to=100, 
-                                      orient=tk.HORIZONTAL,
-                                      variable=self.timeline_var,
-                                      showvalue=0,
-                                      command=self.on_timeline_change,
-                                      length=timeline_length)
-        self.timeline_scale.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 3))  # Further reduced from 5
-        
-        # Time display - compact but fully visible
-        self.time_var = tk.StringVar(value="00:00:00 / 00:00:00")
-        if screen_width <= 1366:
-            time_label = ttk.Label(timeline_frame, textvariable=self.time_var, width=13, font=('Consolas', 7))
-        else:
-            time_label = ttk.Label(timeline_frame, textvariable=self.time_var, width=15, font=('Consolas', 8))
-        time_label.pack(side=tk.LEFT)
-        
-        # Primary controls row - ultra-compact layout for 14-inch screens
-        controls_row1 = ttk.Frame(video_controls)
-        controls_row1.pack(fill=tk.X, pady=(0, 1))
-        
-        # Playback controls - minimal button width for 14-inch screens
-        button_width = 2 if screen_width <= 1366 else 3
-        button_padding = 0 if screen_width <= 1366 else 1
-        
-        self.btn_step_back = ttk.Button(controls_row1, text="⏮", command=self.step_backward, 
-                                       state=tk.DISABLED, width=button_width, 
-                                       style="Video.TButton")
-        self.btn_step_back.pack(side=tk.LEFT, padx=button_padding)
-        
-        self.btn_play = ttk.Button(controls_row1, text="▶", command=self.play_video, 
-                                  state=tk.DISABLED, width=button_width,
-                                  style="Video.TButton")
-        self.btn_play.pack(side=tk.LEFT, padx=button_padding)
-        
-        self.btn_pause = ttk.Button(controls_row1, text="⏸", command=self.pause_video, 
-                                   state=tk.DISABLED, width=button_width,
-                                   style="Video.TButton")
-        self.btn_pause.pack(side=tk.LEFT, padx=button_padding)
-        
-        self.btn_stop_video = ttk.Button(controls_row1, text="⏹", command=self.stop_video, 
-                                        state=tk.DISABLED, width=button_width,
-                                        style="Video.TButton")
-        self.btn_stop_video.pack(side=tk.LEFT, padx=button_padding)
-        
-        self.btn_step_forward = ttk.Button(controls_row1, text="⏭", command=self.step_forward, 
-                                          state=tk.DISABLED, width=button_width,
-                                          style="Video.TButton")
-        self.btn_step_forward.pack(side=tk.LEFT, padx=button_padding)
-        
-        # Separator - minimal for 14-inch screens
-        separator_padx = 3 if screen_width <= 1366 else 5
-        ttk.Separator(controls_row1, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=separator_padx)
-        
-        # Frame navigation - ultra-compact for 14-inch screens
-        if screen_width <= 1366:
-            ttk.Label(controls_row1, text="Fr:", font=("Arial", 7)).pack(side=tk.LEFT, padx=(0, 1))
-            frame_width = 5
-        else:
-            ttk.Label(controls_row1, text="Frame:", font=("Arial", 8)).pack(side=tk.LEFT, padx=(0, 1))
-            frame_width = 6
-            
-        self.frame_var = tk.StringVar(value="0")
-        self.frame_entry = ttk.Entry(controls_row1, textvariable=self.frame_var, width=frame_width, font=("Arial", 7 if screen_width <= 1366 else 8))
-        self.frame_entry.pack(side=tk.LEFT, padx=(0, 1))
-        self.frame_entry.bind("<Return>", self.goto_frame)
-        
-        ttk.Button(controls_row1, text="Go", command=self.goto_frame, width=2).pack(side=tk.LEFT, padx=1)
-        
-        # Speed and time controls (second row) - ultra-compact for 14-inch screens
-        controls_row2 = ttk.Frame(video_controls)
-        controls_row2.pack(fill=tk.X)
-        
-        # Speed control - minimal width
-        if screen_width <= 1366:
-            ttk.Label(controls_row2, text="Spd:", font=("Arial", 7)).pack(side=tk.LEFT, padx=(0, 1))
-            speed_width = 4
-            speed_font = ("Arial", 7)
-        else:
-            ttk.Label(controls_row2, text="Speed:", font=("Arial", 8)).pack(side=tk.LEFT, padx=(0, 1))
-            speed_width = 5
-            speed_font = ("Arial", 8)
-            
-        self.speed_var = tk.StringVar(value="1.0x")
-        self.speed_options = ["0.25x", "0.5x", "1.0x", "1.5x", "2.0x", "3.0x"]
-        self.speed_box = ttk.Combobox(controls_row2, textvariable=self.speed_var, 
-                                     values=self.speed_options, width=speed_width, state="readonly", font=speed_font)
-        self.speed_box.pack(side=tk.LEFT, padx=(0, 3 if screen_width <= 1366 else 5))
-        self.speed_box.bind("<<ComboboxSelected>>", self.set_speed)
-        
-        # Quick jump controls - ultra-compact for 14-inch screens
-        jump_label_padx = (3, 1) if screen_width <= 1366 else (5, 1)
-        jump_button_width = 3 if screen_width <= 1366 else 4
-        
-        if screen_width <= 1366:
-            ttk.Label(controls_row2, text="Jmp:", font=("Arial", 7)).pack(side=tk.LEFT, padx=jump_label_padx)
-        else:
-            ttk.Label(controls_row2, text="Jump:", font=("Arial", 8)).pack(side=tk.LEFT, padx=jump_label_padx)
-            
-        ttk.Button(controls_row2, text="-10s", command=lambda: self.jump_seconds(-10), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
-        ttk.Button(controls_row2, text="-5s", command=lambda: self.jump_seconds(-5), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
-        ttk.Button(controls_row2, text="+5s", command=lambda: self.jump_seconds(5), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
-        ttk.Button(controls_row2, text="+10s", command=lambda: self.jump_seconds(10), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
-        
-        # Initialize timeline variables
-        self.seeking = False  # Flag to prevent recursive updates during seeking
+    ttk.Button(controls_row2, text="-10s", command=lambda: self.jump_seconds(-10), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
+    ttk.Button(controls_row2, text="-5s", command=lambda: self.jump_seconds(-5), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
+    ttk.Button(controls_row2, text="+5s", command=lambda: self.jump_seconds(5), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
+    ttk.Button(controls_row2, text="+10s", command=lambda: self.jump_seconds(10), width=jump_button_width).pack(side=tk.LEFT, padx=0 if screen_width <= 1366 else 1)
+    
+    # Initialize timeline variables
+    self.seeking = False
     
 def create_results_area(self, parent):
         """Creates scrollable results area optimized for 14-inch screens"""
