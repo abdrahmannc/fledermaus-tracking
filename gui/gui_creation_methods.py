@@ -148,25 +148,25 @@ def create_video_area(self, parent):
     content_frame = ttk.Frame(video_frame)
     content_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
     
-    # Responsive canvas size optimized for 14-inch screens
+    # Responsive canvas size optimized for better video visibility
     screen_width = self.root.winfo_screenwidth()
     screen_height = self.root.winfo_screenheight()
     
     if screen_width <= 1366:
         canvas_width = min(640, screen_width - 350)
-        canvas_height = min(280, screen_height - 450)  # Leave more room for controls
+        canvas_height = min(400, screen_height - 350)  # Increased height for full video visibility
     elif screen_width <= 1600:
         canvas_width = min(720, screen_width - 400)
-        canvas_height = min(330, screen_height - 470)  
+        canvas_height = min(450, screen_height - 380)  # Increased height for full video visibility
     else:
         canvas_width = 800
-        canvas_height = 380  # Reduced to ensure controls fit
+        canvas_height = 500  # Increased to ensure full video is visible
     
-    # Canvas with strict dimensions and no extra space
+    # Canvas with improved dimensions for full video visibility
     self.canvas = tk.Canvas(content_frame, bg='#222', 
                            width=canvas_width, height=canvas_height, 
                            highlightthickness=0, relief=tk.FLAT, bd=0)
-    self.canvas.pack(side=tk.TOP, fill=tk.NONE, expand=False, pady=0, padx=0)
+    self.canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=0, padx=0)
     
     # Bind mouse events for polygon drawing
     self.canvas.bind("<Button-1>", self.on_canvas_click)
