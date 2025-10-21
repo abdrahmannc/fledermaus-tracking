@@ -314,8 +314,15 @@ def check_and_notify_priority_conflict(self):
 def canvas_to_video_coords(self, canvas_x, canvas_y):
     """Convert canvas coordinates to video coordinates"""
     if self.canvas_scale_x > 0 and self.canvas_scale_y > 0:
-        video_x = int(canvas_x / self.canvas_scale_x)
-        video_y = int(canvas_y / self.canvas_scale_y)
+        # Account for canvas offset
+        offset_x = getattr(self, 'canvas_x_offset', 0)
+        offset_y = getattr(self, 'canvas_y_offset', 0)
+        
+        adjusted_x = canvas_x - offset_x
+        adjusted_y = canvas_y - offset_y
+        
+        video_x = int(adjusted_x / self.canvas_scale_x)
+        video_y = int(adjusted_y / self.canvas_scale_y)
         return video_x, video_y
     return canvas_x, canvas_y
 
@@ -323,6 +330,14 @@ def video_to_canvas_coords(self, video_x, video_y):
     """Convert video coordinates to canvas coordinates"""
     canvas_x = int(video_x * self.canvas_scale_x)
     canvas_y = int(video_y * self.canvas_scale_y)
+    
+    # Account for canvas offset
+    offset_x = getattr(self, 'canvas_x_offset', 0)
+    offset_y = getattr(self, 'canvas_y_offset', 0)
+    
+    canvas_x += offset_x
+    canvas_y += offset_y
+    
     return canvas_x, canvas_y
 
 def redraw_polygons_on_canvas(self):
