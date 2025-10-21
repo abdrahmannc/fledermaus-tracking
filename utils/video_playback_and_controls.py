@@ -56,14 +56,35 @@ def show_frame(self, frame):
                     # Fallback to frame dimensions if video cap not available
                     original_height, original_width = frame.shape[:2]
                 
+                # Initialize default offsets
+                self.canvas_x_offset = 0
+                self.canvas_y_offset = 0
+                
                 self.canvas_scale_x = canvas_width / original_width
                 self.canvas_scale_y = canvas_height / original_height
                 
-                img = img.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS)
+                # Preserve aspect ratio while fitting in canvas
+                scale = min(self.canvas_scale_x, self.canvas_scale_y)
+                new_width = int(original_width * scale)
+                new_height = int(original_height * scale)
+                
+                # Update scale factors to match actual displayed size
+                self.canvas_scale_x = new_width / original_width
+                self.canvas_scale_y = new_height / original_height
+                
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                # Center the image in the canvas
+                x_offset = (canvas_width - new_width) // 2
+                y_offset = (canvas_height - new_height) // 2
+                
+                # Store offset values for coordinate calculations
+                self.canvas_x_offset = x_offset
+                self.canvas_y_offset = y_offset
             
             self.tk_image = ImageTk.PhotoImage(image=img)
             self.canvas.delete("all")  # Clear previous content
-            self.canvas_image = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_image)
+            self.canvas_image = self.canvas.create_image(x_offset, y_offset, anchor=tk.NW, image=self.tk_image)
             
             # Redraw polygon areas if they exist
             self.redraw_polygons_on_canvas()
@@ -145,7 +166,37 @@ def seek_to_frame(self, frame_number):
         ret, frame = self.cap.read()
         if ret:
             frame_small = cv2.resize(frame, None, fx=self.scale_factor, fy=self.scale_factor)
-            self.show_frame(frame_small)
+            
+            # Add ROI overlay if ROI is set
+            if hasattr(self, 'roi') and self.roi is not None:
+                frame_with_overlay = frame_small.copy()
+                x, y, w, h = map(int, self.roi)
+                # Scale ROI coordinates to match resized frame
+                x_scaled = int(x * self.scale_factor)
+                y_scaled = int(y * self.scale_factor)
+                w_scaled = int(w * self.scale_factor)
+                h_scaled = int(h * self.scale_factor)
+                
+                # Draw thick yellow ROI rectangle for better visibility
+                cv2.rectangle(frame_with_overlay, (x_scaled, y_scaled), (x_scaled + w_scaled, y_scaled + h_scaled), (0, 255, 255), 3)
+                # Add corner markers for extra visibility
+                corner_size = int(10 * self.scale_factor)
+                # Top-left corner
+                cv2.line(frame_with_overlay, (x_scaled, y_scaled), (x_scaled + corner_size, y_scaled), (0, 255, 255), 5)
+                cv2.line(frame_with_overlay, (x_scaled, y_scaled), (x_scaled, y_scaled + corner_size), (0, 255, 255), 5)
+                # Top-right corner
+                cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled), (x_scaled + w_scaled - corner_size, y_scaled), (0, 255, 255), 5)
+                cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled), (x_scaled + w_scaled, y_scaled + corner_size), (0, 255, 255), 5)
+                # Bottom-left corner
+                cv2.line(frame_with_overlay, (x_scaled, y_scaled + h_scaled), (x_scaled + corner_size, y_scaled + h_scaled), (0, 255, 255), 5)
+                cv2.line(frame_with_overlay, (x_scaled, y_scaled + h_scaled), (x_scaled, y_scaled + h_scaled - corner_size), (0, 255, 255), 5)
+                # Bottom-right corner
+                cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled + h_scaled), (x_scaled + w_scaled - corner_size, y_scaled + h_scaled), (0, 255, 255), 5)
+                cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled + h_scaled), (x_scaled + w_scaled, y_scaled + h_scaled - corner_size), (0, 255, 255), 5)
+                
+                self.show_frame(frame_with_overlay)
+            else:
+                self.show_frame(frame_small)
             
         # Update UI elements
         self.update_timeline_and_time()
@@ -266,8 +317,38 @@ def _stream_video(self):
         self.current_frame_idx = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
         frame_small = cv2.resize(frame, None, fx=self.scale_factor, fy=self.scale_factor)
         
-        # Show frame (this will ensure thread safety)
-        self.show_frame(frame_small)
+        # Add ROI overlay if ROI is set
+        if hasattr(self, 'roi') and self.roi is not None:
+            frame_with_overlay = frame_small.copy()
+            x, y, w, h = map(int, self.roi)
+            # Scale ROI coordinates to match resized frame
+            x_scaled = int(x * self.scale_factor)
+            y_scaled = int(y * self.scale_factor)
+            w_scaled = int(w * self.scale_factor)
+            h_scaled = int(h * self.scale_factor)
+            
+            # Draw thick yellow ROI rectangle for better visibility
+            cv2.rectangle(frame_with_overlay, (x_scaled, y_scaled), (x_scaled + w_scaled, y_scaled + h_scaled), (0, 255, 255), 3)
+            # Add corner markers for extra visibility
+            corner_size = int(10 * self.scale_factor)
+            # Top-left corner
+            cv2.line(frame_with_overlay, (x_scaled, y_scaled), (x_scaled + corner_size, y_scaled), (0, 255, 255), 5)
+            cv2.line(frame_with_overlay, (x_scaled, y_scaled), (x_scaled, y_scaled + corner_size), (0, 255, 255), 5)
+            # Top-right corner
+            cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled), (x_scaled + w_scaled - corner_size, y_scaled), (0, 255, 255), 5)
+            cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled), (x_scaled + w_scaled, y_scaled + corner_size), (0, 255, 255), 5)
+            # Bottom-left corner
+            cv2.line(frame_with_overlay, (x_scaled, y_scaled + h_scaled), (x_scaled + corner_size, y_scaled + h_scaled), (0, 255, 255), 5)
+            cv2.line(frame_with_overlay, (x_scaled, y_scaled + h_scaled), (x_scaled, y_scaled + h_scaled - corner_size), (0, 255, 255), 5)
+            # Bottom-right corner
+            cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled + h_scaled), (x_scaled + w_scaled - corner_size, y_scaled + h_scaled), (0, 255, 255), 5)
+            cv2.line(frame_with_overlay, (x_scaled + w_scaled, y_scaled + h_scaled), (x_scaled + w_scaled, y_scaled + h_scaled - corner_size), (0, 255, 255), 5)
+            
+            # Show frame with ROI overlay
+            self.show_frame(frame_with_overlay)
+        else:
+            # Show frame without overlay
+            self.show_frame(frame_small)
         
         # Update time displays (thread-safe)
         current_sec = self.current_frame_idx / self.fps
